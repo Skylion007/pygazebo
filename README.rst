@@ -46,12 +46,15 @@ local machine on the default port.
   def publish_loop():
       manager = yield From(pygazebo.connect())
       
+      name_of_world = 'default'
+      name_of_robot = 'model'
+      
       publisher = yield From(
-          manager.advertise('/gazebo/default/model/joint_cmd',
+          manager.advertise('/gazebo/' + name_of_world + '/' + name_of_robot + '/joint_cmd',
                             'gazebo.msgs.JointCmd'))
   
       message = pygazebo.msg.joint_cmd_pb2.JointCmd()
-      message.name = 'robot::joint_name'
+      message.name = 'robot::joint_name' #format should be: name_of_robot + '::name_of_joint'
       message.axis = 0
       message.force = 1.0
 
