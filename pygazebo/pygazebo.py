@@ -783,3 +783,46 @@ def connect(address=('127.0.0.1', 11345)):
     """
     manager = Manager(address)
     return manager.start()
+    
+def wait_for_gazebo(address=('127.0.0.1', 11345), timeout=None):
+    """ Waits for Gazebo's network service to appear on specified port 
+        @param timeout: in seconds, if None or 0 wait forever
+        @return: True of False, if timeout is None may return only True or
+                 throw unhandled network exception
+    """
+    import socket
+    import errno
+    
+    server, port = address
+
+    s = socket.socket()
+    if timeout:
+        from time import time as now
+        # time module is needed to calc timeout shared between two exceptions
+        end = now() + timeout
+
+    while True:   
+        try:
+            if timeout:
+                next_timeout = end - now()
+                if next_timeout < 0:
+                    return False
+                else:
+                    s.settimeout(next_timeout)
+            s.connect((server, port))
+        except socket.timeout as err:
+            # this exception occurs only if timeout is set
+            if timeout:
+                return False
+      
+        except socket.error as err:
+            # catch timeout exception from underlying network library
+            # this one is different from socket.timeout
+            if (type(err.args) != tuple or 
+                    (err[0] != errno.ETIMEDOUT and 
+                    err[0] != errno.ECONNREFUSED)):
+                raise err
+        else:
+            s.close()
+            return True
+
